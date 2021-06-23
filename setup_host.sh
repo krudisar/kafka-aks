@@ -2,9 +2,13 @@
 #    install required packages
 # --------------------------------------------------------------
 
-yum install git yq jq unzip -y
+yum install git jq unzip -y
 export PATH="/usr/local/bin:$PATH"
 
+# --- YQ ---
+wget https://github.com/mikefarah/yq/releases/download/v4.9.6/yq_linux_amd64
+mv yq_linux_amd64 /usr/local/bin/yq
+chmod +x /usr/local/bin/yq
 
 # --- KUBECTL ---
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -54,13 +58,22 @@ cd kafka-aks/terraform
 export TF_VAR_client_id=$ARM_CLIENT_ID
 export TF_VAR_client_secret=$ARM_CLIENT_SECRET
 /usr/local/bin/terraform plan >> /tmp/tf.plan.log
+#/usr/local/bin/terraform plan --auto-approve >> /tmp/tf.apply.log
+
+# --------------------------------------------------------------
+#    get kubeconfig file content from TF output variable 
+#    and save it to kubeconfig.txt file
+# --------------------------------------------------------------
+
+# !!! use -row switch to ensure the file is properly formatted !!!
+#terraform output -raw kube_config | tee > kubeconfig.txt
 
 # --------------------------------------------------------------
 #    clone Confluent repo with Kafka Operator
 # --------------------------------------------------------------
 
-mkdir operator
-cd operator
+mkdir ../../operator 
+cd ../../operator
 
 # !!! - for demo purposes - clone to yor own GitHub account and modify the values.yaml file
 
@@ -71,3 +84,36 @@ cp helm/providers/azure.yaml values.yaml
 
 #export KUBECONFIG=../kubeconfig.txt
 export VALUES_FILE=./values.yaml
+
+# --------------------------------------------------------------
+#    adjust values.yaml file based on inputs 
+# --------------------------------------------------------------
+
+pwd >> /tmp/pwd.out
+
+yq eval '.global.sasl.plain.username = "krudisar"' -i values.yaml
+yq eval '.global.sasl.plain.password = "krudisar123"' -i values.yaml
+
+yq eval '.global.authorization.rbac.enabled = false' -i values.yaml
+yq eval '.global.authorization.simple.enabled = false' -i values.yaml
+
+yq eval '.kafka.replicas = 1' -i values.yaml
+yq eval '.zookeeper.replicas = 1' -i values.yaml
+yq eval '.connect.replicas = 1' -i values.yaml
+yq eval '.replicator.replicas = 1' -i values.yaml
+yq eval '.ksql.replicas = 1' -i values.yaml
+
+yq eval '.kafka.loadBalancer.enabled = true' -i values.yaml
+yq eval '.kafka.loadBalancer.domain = "krdemo.net"' -i values.yaml
+
+yq eval '.controlcenter.loadBalancer.enabled = true' -i values.yaml
+yq eval '.controlcenter.loadBalancer.domain = "krdemo.net"' -i values.yaml
+yq eval '.controlcenter.auth.basic.enabled = false' -i values.yaml
+
+yq eval '.controlcenter.dependencies.connectCluster.enabled = false' -i values.yaml
+yq eval '.controlcenter.dependencies.ksql.enabled = false' -i values.yaml
+yq eval '.controlcenter.dependencies.schemaRegistry.enabled = false' -i values.yaml
+
+
+
+
