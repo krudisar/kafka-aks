@@ -171,9 +171,9 @@ if [ $INPUT_KAFKA_NODES -eq 1 ]; then
   export CC_BOOTSTRAP_LB_IP=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
   export CC_BOOTSTRAP_LB_DNS=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
 
-  echo $KAFKA_0_LB_IP "\t" $KAFKA_0_LB_DNS >> /tmp/DNS.TXT
-  echo $KAFKA_BOOTSTRAP_LB_IP "\t" $KAFKA_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
-  echo $CC_BOOTSTRAP_LB_IP "\t" $CC_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+  echo -e $KAFKA_0_LB_IP "\t" $KAFKA_0_LB_DNS >> /tmp/DNS.TXT
+  echo -e $KAFKA_BOOTSTRAP_LB_IP "\t" $KAFKA_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+  echo -e $CC_BOOTSTRAP_LB_IP "\t" $CC_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
 fi
 
 if [ $INPUT_KAFKA_NODES -eq 2 ]; then  
@@ -191,9 +191,9 @@ if [ $INPUT_KAFKA_NODES -eq 2 ]; then
   export CC_BOOTSTRAP_LB_IP=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
   export CC_BOOTSTRAP_LB_DNS=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
 
-  echo $KAFKA_0_LB_IP "\t" $KAFKA_0_LB_DNS >> /tmp/DNS.TXT
-  echo $KAFKA_1_LB_IP "\t" $KAFKA_1_LB_DNS >> /tmp/DNS.TXT
-  echo $KAFKA_BOOTSTRAP_LB_IP "\t" $KAFKA_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
-  echo $CC_BOOTSTRAP_LB_IP "\t" $CC_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+  echo -e $KAFKA_0_LB_IP "\t" $KAFKA_0_LB_DNS >> /tmp/DNS.TXT
+  echo -e $KAFKA_1_LB_IP "\t" $KAFKA_1_LB_DNS >> /tmp/DNS.TXT
+  echo -e $KAFKA_BOOTSTRAP_LB_IP "\t" $KAFKA_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+  echo -e $CC_BOOTSTRAP_LB_IP "\t" $CC_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
 fi
 
