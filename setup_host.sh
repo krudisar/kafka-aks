@@ -197,3 +197,26 @@ if [ $INPUT_KAFKA_NODES -eq 2 ]; then
   echo -e $CC_BOOTSTRAP_LB_IP "\t" $CC_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
 fi
 
+
+# --------------------------------------------------------------
+#    Final notifications 
+# --------------------------------------------------------------
+
+# Post simple notification to Microsoft Teams.
+TEXT="This operation succeeded ..."
+TITLE="Kafka environment provisioning finished. Please see DNS records below ..."
+COLOR=\$FF00AA
+MESSAGE=$( echo ${TEXT} | sed 's/"/\"/g' | sed "s/'/\'/g" )
+JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
+curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
+
+# Post content of a text file to Microsoft Teams.
+TEXT="This operation succeeded ..."
+TITLE="Kafka environment provisioning finished. PLease see DNS records below ..."
+COLOR=\$FF00AA
+MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
+JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
+curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
+
+
+
