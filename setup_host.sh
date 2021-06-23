@@ -122,6 +122,7 @@ yq eval '.controlcenter.loadBalancer.enabled = true' -i values.yaml
 yq eval '.controlcenter.loadBalancer.domain = "krdemo.net"' -i values.yaml
 yq eval '.controlcenter.auth.basic.enabled = false' -i values.yaml
 
+yq eval '.controlcenter.dependencies.c3KafkaCluster.brokerCount = env(INPUT_KAFKA_NODES)' -i values.yaml
 yq eval '.controlcenter.dependencies.connectCluster.enabled = false' -i values.yaml
 yq eval '.controlcenter.dependencies.ksql.enabled = false' -i values.yaml
 yq eval '.controlcenter.dependencies.schemaRegistry.enabled = false' -i values.yaml
