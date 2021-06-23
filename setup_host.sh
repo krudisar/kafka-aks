@@ -58,7 +58,7 @@ cd kafka-aks/terraform
 export TF_VAR_client_id=$ARM_CLIENT_ID
 export TF_VAR_client_secret=$ARM_CLIENT_SECRET
 /usr/local/bin/terraform plan >> /tmp/tf.plan.log
-#/usr/local/bin/terraform plan --auto-approve >> /tmp/tf.apply.log
+/usr/local/bin/terraform plan --auto-approve >> /tmp/tf.apply.log
 
 # --------------------------------------------------------------
 #    get kubeconfig file content from TF output variable 
@@ -66,7 +66,7 @@ export TF_VAR_client_secret=$ARM_CLIENT_SECRET
 # --------------------------------------------------------------
 
 # !!! use -row switch to ensure the file is properly formatted !!!
-#terraform output -raw kube_config | tee > kubeconfig.txt
+terraform output -raw kube_config | tee > /tmp/kubeconfig.txt
 
 # --------------------------------------------------------------
 #    clone Confluent repo with Kafka Operator
@@ -82,22 +82,22 @@ tar -xf confluent-operator-1.5.0-for-confluent-platform-5.5.0.tar.gz
 
 cp helm/providers/azure.yaml values.yaml
 
-#export KUBECONFIG=../kubeconfig.txt
+export KUBECONFIG=/tmp/kubeconfig.txt
 export VALUES_FILE=./values.yaml
+
+kubectl get nodes --kubeconfig=$KUBECONFIG >> /tmp/kubectl.get.nodes.log
 
 # --------------------------------------------------------------
 #    adjust values.yaml file based on inputs 
 # --------------------------------------------------------------
 
-pwd >> /tmp/pwd.out
-
 yq eval '.global.sasl.plain.username = env(INPUT_USER_NAME)' -i values.yaml
-yq eval '.global.sasl.plain.password = "krudisar123"' -i values.yaml
+yq eval '.global.sasl.plain.password = env(INPUT_USER_PASSWORD)' -i values.yaml
 
 yq eval '.global.authorization.rbac.enabled = false' -i values.yaml
 yq eval '.global.authorization.simple.enabled = false' -i values.yaml
 
-yq eval '.kafka.replicas = 1' -i values.yaml
+yq eval '.kafka.replicas = env(INPUT_KAFKA_NODES)' -i values.yaml
 yq eval '.zookeeper.replicas = 1' -i values.yaml
 yq eval '.connect.replicas = 1' -i values.yaml
 yq eval '.replicator.replicas = 1' -i values.yaml
