@@ -204,16 +204,15 @@ fi
 # --------------------------------------------------------------
 
 # Post simple notification to Microsoft Teams.
-TEXT="This operation succeeded ..."
-TITLE="Kafka environment provisioning finished. Please see DNS records below ..."
+TEXT="Kafka environment provisioning finished. Please see DNS records below ..."
+TITLE="This operation succeeded ..."
 COLOR=\$FF00AA
 MESSAGE=$( echo ${TEXT} | sed 's/"/\"/g' | sed "s/'/\'/g" )
 JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
 curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
 
 # Post content of a text file to Microsoft Teams.
-TEXT="This operation succeeded ..."
-TITLE="Add these DNS record into your DNS zone or hosts file to access your Kafka environment ..."
+TITLE="Add these DNS records into your DNS zone or hosts file to access your Kafka environment ..."
 COLOR=\$FF00AA
 MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
 JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
