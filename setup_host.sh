@@ -212,7 +212,7 @@ curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
 
 # Post content of a text file to Microsoft Teams.
 TEXT="This operation succeeded ..."
-TITLE="Kafka environment provisioning finished. PLease see DNS records below ..."
+TITLE="Add these DNS record into your DNS zone or hosts file to access your Kafka environment ..."
 COLOR=\$FF00AA
 MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
 JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
