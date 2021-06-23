@@ -58,7 +58,7 @@ cd kafka-aks/terraform
 export TF_VAR_client_id=$ARM_CLIENT_ID
 export TF_VAR_client_secret=$ARM_CLIENT_SECRET
 /usr/local/bin/terraform plan >> /tmp/tf.plan.log
-/usr/local/bin/terraform plan --auto-approve >> /tmp/tf.apply.log
+/usr/local/bin/terraform apply -auto-approve >> /tmp/tf.apply.log
 
 # --------------------------------------------------------------
 #    get kubeconfig file content from TF output variable 
