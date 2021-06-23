@@ -91,7 +91,7 @@ export VALUES_FILE=./values.yaml
 
 pwd >> /tmp/pwd.out
 
-yq eval '.global.sasl.plain.username = "krudisar"' -i values.yaml
+yq eval '.global.sasl.plain.username = env(INPUT_USER_NAME)' -i values.yaml
 yq eval '.global.sasl.plain.password = "krudisar123"' -i values.yaml
 
 yq eval '.global.authorization.rbac.enabled = false' -i values.yaml
