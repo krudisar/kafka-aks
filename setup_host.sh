@@ -30,6 +30,29 @@ VERSION=1.0.0
 wget https://releases.hashicorp.com/terraform/${VERSION}/terraform_${VERSION}_linux_amd64.zip
 unzip terraform_${VERSION}_linux_amd64.zip -d /usr/local/bin/
 
+
+# --- Azure CLI ---
+rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sh -c 'echo -e "[azure-cli]
+name=Azure CLI
+baseurl=https://packages.microsoft.com/yumrepos/azure-cli
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo'
+yum install azure-cli -y
+
+
+# --------------------------------------------------------------
+#    Terraform section
+# --------------------------------------------------------------
+
+cd kafka-aks/terraform
+/usr/local/bin/terraform init
+
+export TF_VAR_client_id=$ARM_CLIENT_ID
+export TF_VAR_client_secret=$ARM_CLIENT_SECRET
+/usr/local/bin/terraform plan >> /tmp/tf.plan.log
+
 # --------------------------------------------------------------
 #    clone Confluent repo with Kafka Operator
 # --------------------------------------------------------------
