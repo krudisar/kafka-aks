@@ -88,6 +88,18 @@ export VALUES_FILE=./values.yaml
 kubectl get nodes --kubeconfig=$KUBECONFIG >> /tmp/kubectl.get.nodes.log
 
 # --------------------------------------------------------------
+#    deploy Confluent Kafka Operator Kubernetes custom resources
+# --------------------------------------------------------------
+kubectl apply -f resources/crds --kubeconfig=$KUBECONFIG
+kubectl apply -f resources/rbac --kubeconfig=$KUBECONFIG
+
+# --------------------------------------------------------------
+#    create 'operator' Kubernetes namespace 
+# --------------------------------------------------------------
+kubectl create ns operator --kubeconfig=$KUBECONFIG
+export NAMESPACE=operator
+
+# --------------------------------------------------------------
 #    adjust values.yaml file based on inputs 
 # --------------------------------------------------------------
 
@@ -114,6 +126,74 @@ yq eval '.controlcenter.dependencies.connectCluster.enabled = false' -i values.y
 yq eval '.controlcenter.dependencies.ksql.enabled = false' -i values.yaml
 yq eval '.controlcenter.dependencies.schemaRegistry.enabled = false' -i values.yaml
 
+# --------------------------------------------------------------
+#    deploy Confluent Kafka Operator Services - one by one 
+#     - operator itself
+#     - Zookeeper Service
+#     - Kafka Service - exposed as 'LoadBalancer' type  
+#     - ControlCenter Service - exposed as 'LoadBalancer' type  
+# 
+# --------------------------------------------------------------
 
+# ---> Operator pod(s)
+helm upgrade --install   operator   ./helm/confluent-operator   --values $VALUES_FILE   --namespace $NAMESPACE   --set operator.enabled=true
+sleep 30
 
+# ---> Zookeeper pod(s)
+helm upgrade --install   zookeeper   ./helm/confluent-operator   --values $VALUES_FILE   --namespace $NAMESPACE   --set zookeeper.enabled=true
+sleep 60
+
+# ---> Kafka pod(s)
+helm upgrade --install   kafka   ./helm/confluent-operator   --values $VALUES_FILE   --namespace $NAMESPACE   --set kafka.enabled=true
+sleep 120
+
+# ---> ControlCenter pod(s)
+helm upgrade --install   controlcenter   ./helm/confluent-operator   --values $VALUES_FILE   --namespace $NAMESPACE   --set controlcenter.enabled=true
+sleep 240 #(... wait for EXTERNAL-IP for LoadBalancer services)
+
+# (check pod creation process using ...)
+kubectl get pods --kubeconfig=$KUBECONFIG -n $NAMESPACE >> /tmp/kubectl.get.pods.operator.log
+kubectl get svc --kubeconfig=$KUBECONFIG -n $NAMESPACE >> /tmp/kubectl.get.svc.operator.log
+
+# --------------------------------------------------------------
+#    parse external IPs and create corresponding DNS records 
+# --------------------------------------------------------------
+
+if [ $INPUT_KAFKA_NODES -eq 1 ]; then  
+  echo "### DNS records for single node Kafka environment"; 
+
+  export KAFKA_0_LB_IP=$(kubectl get svc kafka-0-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
+  export KAFKA_0_LB_DNS=$(kubectl get svc kafka-0-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
+
+  export KAFKA_BOOTSTRAP_LB_IP=$(kubectl get svc kafka-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
+  export KAFKA_BOOTSTRAP_LB_DNS=$(kubectl get svc kafka-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
+
+  export CC_BOOTSTRAP_LB_IP=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
+  export CC_BOOTSTRAP_LB_DNS=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
+
+  echo $KAFKA_0_LB_IP "\t" $KAFKA_0_LB_DNS >> /tmp/DNS.TXT
+  echo $KAFKA_BOOTSTRAP_LB_IP "\t" $KAFKA_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+  echo $CC_BOOTSTRAP_LB_IP "\t" $CC_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+fi
+
+if [ $INPUT_KAFKA_NODES -eq 2 ]; then  
+  echo "### DNS records for double node Kafka environment"; 
+
+  export KAFKA_0_LB_IP=$(kubectl get svc kafka-0-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
+  export KAFKA_0_LB_DNS=$(kubectl get svc kafka-0-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
+
+  export KAFKA_1_LB_IP=$(kubectl get svc kafka-1-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
+  export KAFKA_1_LB_DNS=$(kubectl get svc kafka-1-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
+
+  export KAFKA_BOOTSTRAP_LB_IP=$(kubectl get svc kafka-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
+  export KAFKA_BOOTSTRAP_LB_DNS=$(kubectl get svc kafka-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
+
+  export CC_BOOTSTRAP_LB_IP=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".status.loadBalancer.ingress[0].ip" | tr -d '"')
+  export CC_BOOTSTRAP_LB_DNS=$(kubectl get svc controlcenter-bootstrap-lb --kubeconfig=$KUBECONFIG -n $NAMESPACE -o json | jq ".metadata.annotations.\"external-dns.alpha.kubernetes.io/hostname\"" | tr -d '"')
+
+  echo $KAFKA_0_LB_IP "\t" $KAFKA_0_LB_DNS >> /tmp/DNS.TXT
+  echo $KAFKA_1_LB_IP "\t" $KAFKA_1_LB_DNS >> /tmp/DNS.TXT
+  echo $KAFKA_BOOTSTRAP_LB_IP "\t" $KAFKA_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+  echo $CC_BOOTSTRAP_LB_IP "\t" $CC_BOOTSTRAP_LB_DNS >> /tmp/DNS.TXT
+fi
 
