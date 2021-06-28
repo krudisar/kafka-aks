@@ -77,8 +77,6 @@ terraform output -raw kube_config | tee > /tmp/kubeconfig.txt
 mkdir ../../operator 
 cd ../../operator
 
-# !!! - for demo purposes - clone to yor own GitHub account and modify the values.yaml file
-
 wget https://platform-ops-bin.s3-us-west-1.amazonaws.com/operator/confluent-operator-1.5.0-for-confluent-platform-5.5.0.tar.gz
 tar -xf confluent-operator-1.5.0-for-confluent-platform-5.5.0.tar.gz 
 
@@ -219,3 +217,4 @@ COLOR=\$FF00AA
 MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
 JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
 curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
+
