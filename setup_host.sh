@@ -47,6 +47,8 @@ yum install azure-cli -y
 #
 az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
 
+# --- Apache Maven ---
+yum -y install maven
 
 # --------------------------------------------------------------
 #    Terraform section
@@ -217,6 +219,3 @@ COLOR=\$FF00AA
 MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
 JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
 curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
-
-
-
