@@ -1,6 +1,31 @@
 # --------------------------------------------------------------
+#    Notification functions (text & content of a text file
+# --------------------------------------------------------------
+
+function notify_message(){
+  # Post simple notification to Microsoft Teams.
+  TITLE=$1
+  TEXT=$2
+  COLOR=\$006600
+  MESSAGE=$( echo ${TEXT} | sed 's/"/\"/g' | sed "s/'/\'/g" )
+  JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
+  curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
+}
+
+function notify_file(){
+  # Post content of a text file to Microsoft Teams.
+  TITLE=$1
+  COLOR=\$006600
+  MESSAGE=$( cat $2 | sed 's/"/\"/g' | sed "s/'/\'/g" )
+  JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
+  curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
+}
+
+# --------------------------------------------------------------
 #    install required packages
 # --------------------------------------------------------------
+
+notify_message "Kafka environment provisioning in progress ..." "Installing software dependencies and tools ..."
 
 yum install git jq unzip -y
 export PATH="/usr/local/bin:$PATH"
@@ -54,6 +79,8 @@ yum -y install maven
 #    Terraform section
 # --------------------------------------------------------------
 
+notify_message "Kafka environment provisioning in progress ..." "Going to set up an AKS cluster with 4 worker nodes ..."
+
 cd kafka-aks/terraform
 /usr/local/bin/terraform init
 
@@ -73,6 +100,8 @@ terraform output -raw kube_config | tee > /tmp/kubeconfig.txt
 # --------------------------------------------------------------
 #    clone Confluent repo with Kafka Operator
 # --------------------------------------------------------------
+
+notify_message "Kafka environment provisioning in progress ..." "Going to clone Confluent Kafka Operator repository ..."
 
 mkdir ../../operator 
 cd ../../operator
@@ -102,6 +131,8 @@ export NAMESPACE=operator
 # --------------------------------------------------------------
 #    adjust values.yaml file based on inputs 
 # --------------------------------------------------------------
+
+notify_message "Kafka environment provisioning in progress ..." "Modifying values.yaml to deploy customized Kafka platform ..."
 
 yq eval '.global.sasl.plain.username = env(INPUT_USER_NAME)' -i values.yaml
 yq eval '.global.sasl.plain.password = env(INPUT_USER_PASSWORD)' -i values.yaml
@@ -136,6 +167,8 @@ yq eval '.controlcenter.dependencies.schemaRegistry.enabled = false' -i values.y
 # 
 # --------------------------------------------------------------
 
+notify_message "Kafka environment provisioning in progress ..." "Installing Apache Kafka platform on AKS cluster ..."
+
 # ---> Operator pod(s)
 helm upgrade --install   operator   ./helm/confluent-operator   --values $VALUES_FILE   --namespace $NAMESPACE   --set operator.enabled=true
 sleep 30
@@ -159,6 +192,8 @@ kubectl get svc --kubeconfig=$KUBECONFIG -n $NAMESPACE >> /tmp/kubectl.get.svc.o
 # --------------------------------------------------------------
 #    parse external IPs and create corresponding DNS records 
 # --------------------------------------------------------------
+
+notify_message "Kafka environment provisioning in progress ..." "Getting external IP addresses for exposed services & preparing DNS records ..."
 
 if [ $INPUT_KAFKA_NODES -eq 1 ]; then  
   echo "### DNS records for single node Kafka environment"; 
@@ -203,18 +238,22 @@ fi
 #    Final notifications 
 # --------------------------------------------------------------
 
+notify_message "The provisioning process completed !!!" "Kafka environment provisioning finished. Please see DNS records below ..."
+#
+notify_file "Add these DNS records into your DNS zone or hosts file to access your Kafka environment ..." "/tmp/DNS.TXT"
+
 # Post simple notification to Microsoft Teams.
-TEXT="Kafka environment provisioning finished. Please see DNS records below ..."
-TITLE="This operation succeeded ..."
-COLOR=\$FF00AA
-MESSAGE=$( echo ${TEXT} | sed 's/"/\"/g' | sed "s/'/\'/g" )
-JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
-curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
+#TEXT="Kafka environment provisioning finished. Please see DNS records below ..."
+#TITLE="This operation succeeded ..."
+#COLOR=\$FF00AA
+#MESSAGE=$( echo ${TEXT} | sed 's/"/\"/g' | sed "s/'/\'/g" )
+#JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
+#curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
 
 # Post content of a text file to Microsoft Teams.
-TITLE="Add these DNS records into your DNS zone or hosts file to access your Kafka environment ..."
-COLOR=\$FF00AA
-MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
-JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
-curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
+#TITLE="Add these DNS records into your DNS zone or hosts file to access your Kafka environment ..."
+#COLOR=\$FF00AA
+#MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
+#JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
+#curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
 
