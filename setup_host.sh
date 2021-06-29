@@ -193,7 +193,7 @@ kubectl get svc --kubeconfig=$KUBECONFIG -n $NAMESPACE >> /tmp/kubectl.get.svc.o
 #    parse external IPs and create corresponding DNS records 
 # --------------------------------------------------------------
 
-notify_message "Kafka environment provisioning in progress ..." "Getting external IP addresses for exposed services & preparing DNS records ..."
+notify_message "Kafka environment provisioning in progress ..." "Getting external IP addresses of exposed Kubernetes services & preparing DNS records ..."
 
 if [ $INPUT_KAFKA_NODES -eq 1 ]; then  
   echo "### DNS records for single node Kafka environment"; 
