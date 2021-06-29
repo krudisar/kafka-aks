@@ -242,18 +242,4 @@ notify_message "The provisioning process completed !!!" "Kafka environment provi
 #
 notify_file "Add these DNS records into your DNS zone or hosts file to access your Kafka environment ..." "/tmp/DNS.TXT"
 
-# Post simple notification to Microsoft Teams.
-#TEXT="Kafka environment provisioning finished. Please see DNS records below ..."
-#TITLE="This operation succeeded ..."
-#COLOR=\$FF00AA
-#MESSAGE=$( echo ${TEXT} | sed 's/"/\"/g' | sed "s/'/\'/g" )
-#JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
-#curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
-
-# Post content of a text file to Microsoft Teams.
-#TITLE="Add these DNS records into your DNS zone or hosts file to access your Kafka environment ..."
-#COLOR=\$FF00AA
-#MESSAGE=$( cat /tmp/DNS.TXT | sed 's/"/\"/g' | sed "s/'/\'/g" )
-#JSON="{\"title\": \"${TITLE}\", \"themeColor\": \"${COLOR}\", \"text\": \"<b><pre>${MESSAGE}</pre></b>\" }"
-#curl -H "Content-Type: application/json" -d "${JSON}" ${MSTEAMS_WEBHOOK}
-
+# DONE!
