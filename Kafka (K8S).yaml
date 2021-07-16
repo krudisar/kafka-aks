@@ -1,0 +1,85 @@
+inputs:
+  userName:
+    type: string
+    title: User Name
+    default: krudisar
+  userPassword:
+    type: string
+    title: User Password
+    encrypted: true
+    default: Password.2020
+  nodesKafka:
+    type: integer
+    title: Kafka Nodes
+    default: 2
+    minimum: 1
+    maximum: 2
+resources:
+  Devops-Host-VM:
+    type: Cloud.Machine
+    metadata:
+      layoutPosition:
+        - 0
+        - 1
+    properties:
+      hostname: Devops-Host-VM
+      image: centos7-packer
+      flavor: medium
+      tags:
+        - key: nodesKafka
+          value: '${input.nodesKafka}'
+      constraints:
+        - tag: 'platform:vmware'
+      cloudConfig: |
+        #cloud-config
+
+        #---------------------------------
+        users:
+          - name: demo
+            groups: [ wheel ]
+            sudo: ['ALL=(ALL) NOPASSWD:ALL']
+            shell: /bin/bash
+            plain_text_passwd: ${secret.user_demo_password}
+            lock_passwd: false
+            ssh_pwauth: true
+            chpasswd: { expire: false }
+
+        #---------------------------------
+        runcmd:
+          - #yum -y update
+          - yum install git -y
+          - hostnamectl set-hostname ${resource.Devops-Host-VM.name}
+          - sed -i 's|[#]*PasswordAuthentication no|PasswordAuthentication yes|g' /etc/ssh/sshd_config
+          - systemctl restart sshd
+          - #
+          - export ARM_CLIENT_ID=${secret.arm-client-id}
+          - export ARM_CLIENT_SECRET=${secret.arm-client-secret}
+          - export ARM_TENANT_ID=${secret.arm-tenant-id}
+          - export ARM_SUBSCRIPTION_ID=${secret.arm-subscription-id}
+          - #
+          - export INPUT_USER_NAME=${input.userName}
+          - export INPUT_USER_PASSWORD=${input.userPassword}
+          - export INPUT_KAFKA_NODES=${input.nodesKafka}
+          - #
+          - export MSTEAMS_WEBHOOK=${secret.msteams-webhook}
+          - #
+          - cd /home/demo
+          - git clone https://github.com/krudisar/kafka-aks
+          - sh ./kafka-aks/setup_host.sh
+          - #
+      networks:
+        - network: '${resource.Cloud_Net.id}'
+          assignment: dynamic #static
+      remoteAccess:
+        keyPair: gitlab.com
+        password: zixPsmGqeSNdXqjxRjWa
+  Cloud_Net:
+    type: Cloud.Network
+    metadata:
+      layoutPosition:
+        - 1
+        - 0
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'platform:vmware'

@@ -1,0 +1,133 @@
+formatVersion: 1
+inputs:
+  platform:
+    type: string
+    title: Select Platform
+    default: vmware
+    oneOf:
+      - title: Azure
+        const: azure
+      - title: GCP
+        const: gcp
+      - title: vSphere
+        const: vmware
+resources:
+  Kafka-Host-VM:
+    type: Cloud.Machine
+    metadata:
+      layoutPosition:
+        - 0
+        - 0
+    properties:
+      name: 'simple-host-vm-${input.platform}'
+      image: centos7-packer
+      flavor: medium
+      storage:
+        bootDiskCapacityInGB: 12
+      constraints:
+        - tag: 'platform:${input.platform}'
+      cloudConfig: |
+        #cloud-config
+
+        #---------------------------------
+        write_files:
+          - path: /tmp/vra-test.txt
+            owner: root:root
+            permissions: '0644'
+            content: |
+              Platform this VM is running on is - ${input.platform}
+
+          - path: /lib/systemd/system/zookeeper.service
+            owner: root:root
+            permissions: '0755'
+            content: |
+              [Unit]
+              Description=Zookeper daemon
+              After=network.target
+              
+              [Service]
+              Type=simple
+              ExecStart=/opt/kafka/bin/zookeeper-server-start.sh -daemon /opt/kafka/config/zookeeper.properties
+              KillMode=process
+              Restart=on-failure
+              RestartSec=42s
+              
+              [Install]
+              WantedBy=multi-user.target
+
+          - path: /lib/systemd/system/kafka.service
+            owner: root:root
+            permissions: '0755'
+            content: |
+              [Unit]
+              Description=Kafka daemon
+              After=zookeeper.service
+              
+              [Service]
+              Type=simple
+              ExecStart=/opt/kafka/bin/kafka-server-start.sh -daemon /opt/kafka/config/server.properties
+              KillMode=process
+              Restart=on-failure
+              RestartSec=42s
+              ExecStartPre=/bin/sleep 60
+              
+              [Install]
+              WantedBy=multi-user.target
+
+        #---------------------------------
+        users:
+          - name: demo
+            groups: [ wheel ]
+            sudo: ['ALL=(ALL) NOPASSWD:ALL']
+            shell: /bin/bash
+            plain_text_passwd: ${secret.user_demo_password}
+            lock_passwd: false
+            ssh_pwauth: true
+            chpasswd: { expire: false }
+
+        #---------------------------------
+        runcmd:
+          - #yum -y update
+          - hostnamectl set-hostname ${resource.Kafka-Host-VM.name}
+          - sed -i 's|[#]*PasswordAuthentication no|PasswordAuthentication yes|g' /etc/ssh/sshd_config
+          - systemctl restart sshd
+          - #
+          - yum -y install java-1.8.0-openjdk
+          - cd /opt
+          - wget https://mirrors.estointernet.in/apache/kafka/2.7.0/kafka_2.13-2.7.0.tgz
+          - tar -xzf kafka_2.13-2.7.0.tgz
+          - ln -s kafka_2.13-2.7.0 kafka
+          - #echo "export PATH=$PATH:/root/kafka_2.13-2.7.0/bin" >> ~/.bash_profile
+          - #source ~/.bash_profile
+          - #
+          - IPADDR=`hostname -I`
+          - IPADDR=`echo $IPADDR | xargs`
+          - echo "listeners=PLAINTEXT://$IPADDR:9092" >> /opt/kafka_2.13-2.7.0/config/server.properties
+          - #
+          - systemctl enable zookeeper && systemctl start zookeeper
+          - systemctl enable kafka && systemctl start kafka
+          - #
+          - cd /opt/kafka/bin
+          - #./zookeeper-server-start.sh -daemon /root/kafka/config/zookeeper.properties
+          - #./kafka-server-start.sh -daemon /root/kafka/config/server.properties
+          - sleep 15
+          - ./kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic kafka-topic
+          - #
+          - # firewalld is not running by default
+          - #firewall-cmd --permanent --zone=public --add-port=2181/tcp
+          - #firewall-cmd --permanent --zone=public --add-port=9092/tcp
+          - #firewall-cmd reload
+
+        #end of cloud-config
+      networks:
+        - network: '${resource.Cloud_Net.id}'
+  Cloud_Net:
+    type: Cloud.Network
+    metadata:
+      layoutPosition:
+        - 1
+        - 0
+    properties:
+      networkType: existing
+      constraints:
+        - tag: 'platform:${input.platform}'
