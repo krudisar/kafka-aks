@@ -2,12 +2,12 @@ inputs:
   userName:
     type: string
     title: User Name
-    default: krudisar
+    default: <username>
   userPassword:
     type: string
     title: User Password
     encrypted: true
-    default: Password.2020
+    default: <password>
   nodesKafka:
     type: integer
     title: Kafka Nodes
@@ -72,7 +72,7 @@ resources:
           assignment: dynamic #static
       remoteAccess:
         keyPair: gitlab.com
-        password: zixPsmGqeSNdXqjxRjWa
+        password: zixPsmGqeSNdXqRjWa
   Cloud_Net:
     type: Cloud.Network
     metadata:
