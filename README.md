@@ -10,3 +10,6 @@ Solution components:
 - **VMware vSphere** - for on-premise VM based Confluent Kafka cluster
 - **MS Teams Notification service** - environment provisioning progress notifications
 
+Schema:
+
+![alt text](https://github.com/krudisar/kafka-aks/blob/main/dhl-kafka.png)
