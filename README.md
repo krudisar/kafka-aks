@@ -13,3 +13,6 @@ Solution components:
 Schema:
 
 ![alt text](https://github.com/krudisar/kafka-aks/blob/main/dhl-kafka.png)
+
+Demonstration video:
+
