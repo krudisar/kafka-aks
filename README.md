@@ -14,5 +14,6 @@ Schema:
 
 ![alt text](https://github.com/krudisar/kafka-aks/blob/main/dhl-kafka.png)
 
-Demonstration video:
+**Demonstration video:**
 
+Link: https://drive.google.com/file/d/1VKCbd2ETP3_7RxeHLhour-x4_LTbFKaa/view?usp=sharing
