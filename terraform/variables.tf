@@ -7,7 +7,7 @@ variable "dns_prefix" {
 }
 
 variable cluster_name {
-    default = "aks-kafka-cluster"
+    default = "aks-kafka-cluster-2"
 }
 
 variable resource_group_name {
